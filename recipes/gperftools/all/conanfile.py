@@ -114,9 +114,9 @@ class GperftoolsConan(ConanFile):
         if Version(self.version) >= "2.11.0" and self.settings.compiler == "gcc" and Version(self.settings.compiler.version) < "7":
             raise ConanInvalidConfiguration(f"{self.ref} does not support gcc < 7.")
 
-        if cross_building(self) and self.options.shared:
-            if Version(self.version) <= "2.17.0" and is_apple_os(self):
-                raise ConanInvalidConfiguration(f"{self.ref} does not support shared when cross-building")
+        #if cross_building(self) and self.options.shared:
+        #    if Version(self.version) < "2.17" and is_apple_os(self):
+        #        raise ConanInvalidConfiguration(f"{self.ref} does not support shared when cross-building")
 
         if self.settings.os == "Windows":
             raise ConanInvalidConfiguration(
@@ -165,6 +165,11 @@ class GperftoolsConan(ConanFile):
             args["enable-emergency-malloc"] = self.options.emergency_malloc
         args["with-tcmalloc-alignment"] = self.options.tcmalloc_alignment
         args["with-tcmalloc-pagesize"] = self.options.tcmalloc_pagesize
+
+        if cross_building(self) and is_apple_os(self) and Version(self.version) < "2.17":
+            xcr = XCRun(self)
+            target = to_apple_arch(self) + "-apple-darwin"
+            tc.configure_args.append(f"CC={xcr.cc} -isysroot {xcr.sdk_path} -target {target}")
 
         for k, v in args.items():
             if v in [True, False]:
